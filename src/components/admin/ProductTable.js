@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion'
 export default function ProductTable({ products, loading, onEdit, onDelete }) {
   if (loading) {
     return <div className="text-center py-8">Loading products...</div>

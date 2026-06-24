@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import ProductTable from './ProductTable'
 import ProductModal from './ProductModal'
 import StoreCustomization from './StoreCustomization'
+import { Plus, Package, Palette } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function AdminPanel({ store }) {
@@ -96,7 +98,6 @@ export default function AdminPanel({ store }) {
 
       let result
       if (editingProduct) {
-        // Update existing product
         const { data, error } = await supabase
           .from('products')
           .update(dataToSave)
@@ -108,7 +109,6 @@ export default function AdminPanel({ store }) {
         result = data
         toast.success('Product updated successfully')
       } else {
-        // Create new product
         const { data, error } = await supabase
           .from('products')
           .insert([dataToSave])
@@ -128,53 +128,86 @@ export default function AdminPanel({ store }) {
     }
   }
 
+  const tabConfigs = [
+    { id: 'products', label: 'Products', icon: Package },
+    { id: 'customize', label: 'Customize Store', icon: Palette }
+  ]
+
   return (
     <div>
-      <div className="flex gap-4 mb-6 border-b">
-        <button
-          onClick={() => setActiveTab('products')}
-          className={`px-4 py-2 font-medium transition-colors ${
-            activeTab === 'products'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          📦 Products
-        </button>
-        <button
-          onClick={() => setActiveTab('customize')}
-          className={`px-4 py-2 font-medium transition-colors ${
-            activeTab === 'customize'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          🎨 Customize Store
-        </button>
+      <div className="flex gap-2 mb-6 bg-gray-100/80 backdrop-blur-sm p-1 rounded-2xl w-fit">
+        {tabConfigs.map((tab) => {
+          const isActive = activeTab === tab.id
+          const Icon = tab.icon
+          
+          return (
+            <motion.button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`relative px-4 py-2 text-sm font-medium rounded-xl transition-colors flex items-center gap-2 ${
+                isActive ? 'text-gray-900' : 'text-gray-600 hover:text-gray-900'
+              }`}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="admin-tab-indicator"
+                  className="absolute inset-0 bg-white rounded-xl shadow-sm"
+                  transition={{ type: 'spring', duration: 0.3 }}
+                />
+              )}
+              <span className="relative z-10 flex items-center gap-2">
+                <Icon className="w-4 h-4" />
+                {tab.label}
+              </span>
+            </motion.button>
+          )
+        })}
       </div>
 
-      {activeTab === 'products' ? (
-        <>
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Product Inventory</h2>
-            <button
-              onClick={handleAddProduct}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-            >
-              <span>+</span> Add Product
-            </button>
-          </div>
+      <AnimatePresence mode="wait">
+        {activeTab === 'products' ? (
+          <motion.div
+            key="products"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Product Inventory</h2>
+                <p className="text-gray-500 text-sm mt-1">Manage your products and inventory</p>
+              </div>
+              <motion.button
+                onClick={handleAddProduct}
+                className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-medium flex items-center gap-2 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Plus className="w-4 h-4" />
+                Add Product
+              </motion.button>
+            </div>
 
-          <ProductTable
-            products={products}
-            loading={loading}
-            onEdit={handleEditProduct}
-            onDelete={handleDeleteProduct}
-          />
-        </>
-      ) : (
-        <StoreCustomization store={store} />
-      )}
+            <ProductTable
+              products={products}
+              loading={loading}
+              onEdit={handleEditProduct}
+              onDelete={handleDeleteProduct}
+            />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="customize"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <StoreCustomization store={store} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <ProductModal
         isOpen={isModalOpen}

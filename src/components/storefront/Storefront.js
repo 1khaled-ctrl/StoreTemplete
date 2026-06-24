@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import ProductCard from './ProductCard'
 import CategoryNav from './CategoryNav'
 import HeroBanner from './HeroBanner'
 import CartDrawer from './CartDrawer'
+import { ShoppingBag, Sparkles } from 'lucide-react'
 
 export default function Storefront({ store }) {
   const [products, setProducts] = useState([])
@@ -31,7 +33,7 @@ export default function Storefront({ store }) {
         .order('name')
       
       if (error) throw error
-      setCategories(data)
+      setCategories(data || [])
     } catch (error) {
       console.error('Error fetching categories:', error)
     }
@@ -52,7 +54,7 @@ export default function Storefront({ store }) {
       
       const { data, error } = await query
       if (error) throw error
-      setProducts(data)
+      setProducts(data || [])
     } catch (error) {
       console.error('Error fetching products:', error)
     } finally {
@@ -99,6 +101,10 @@ export default function Storefront({ store }) {
     return cartItems.reduce((total, item) => total + (item.selling_price * item.quantity), 0)
   }
 
+  const getCartCount = () => {
+    return cartItems.reduce((sum, item) => sum + item.quantity, 0)
+  }
+
   return (
     <div>
       {/* Hero Banner */}
@@ -112,45 +118,93 @@ export default function Storefront({ store }) {
       />
 
       {/* Cart Button */}
-      <div className="flex justify-end mb-6">
-        <button
+      <motion.div 
+        className="flex justify-end mb-6"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <motion.button
           onClick={() => setCartOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="relative flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-2xl shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
-          <span>🛒</span>
-          <span>Cart ({cartItems.reduce((sum, item) => sum + item.quantity, 0)})</span>
-          <span className="text-sm opacity-75">${getCartTotal().toFixed(2)}</span>
-        </button>
-      </div>
+          <ShoppingBag className="w-5 h-5" />
+          <span className="font-medium">Cart</span>
+          {getCartCount() > 0 && (
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shadow-lg shadow-red-500/30"
+            >
+              {getCartCount()}
+            </motion.span>
+          )}
+          <span className="text-sm opacity-90">${getCartTotal().toFixed(2)}</span>
+        </motion.button>
+      </motion.div>
 
       {/* Products Grid */}
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="animate-pulse">
-              <div className="bg-gray-200 h-48 rounded-t-lg"></div>
-              <div className="bg-white p-4 rounded-b-lg">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+      <AnimatePresence mode="wait">
+        {loading ? (
+          <motion.div
+            key="loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="product-grid"
+          >
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="bg-gray-200 h-48 rounded-t-2xl"></div>
+                <div className="bg-white p-4 rounded-b-2xl">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      ) : products.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">No products available</p>
-        </div>
-      ) : (
-        <div className="product-grid">
-          {products.map(product => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onAddToCart={addToCart}
-            />
-          ))}
-        </div>
-      )}
+            ))}
+          </motion.div>
+        ) : products.length === 0 ? (
+          <motion.div
+            key="empty"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="text-center py-20"
+          >
+            <motion.div
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <Sparkles className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            </motion.div>
+            <p className="text-gray-500 text-lg">No products available</p>
+            <p className="text-gray-400 text-sm mt-2">Check back later for new arrivals</p>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="products"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="product-grid"
+          >
+            {products.map((product, index) => (
+              <motion.div
+                key={product.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <ProductCard
+                  product={product}
+                  onAddToCart={addToCart}
+                />
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Cart Drawer */}
       <CartDrawer

@@ -1,31 +1,45 @@
+'use client'
+
+import { motion } from 'framer-motion'
+import { LayoutGrid } from 'lucide-react'
+
 export default function CategoryNav({ categories, selectedCategory, onSelectCategory }) {
   return (
-    <div className="mb-8">
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mb-8"
+    >
       <div className="flex flex-wrap gap-2">
-        <button
+        <motion.button
           onClick={() => onSelectCategory(null)}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+          className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
             selectedCategory === null
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30'
+              : 'bg-white text-gray-700 hover:bg-gray-100 shadow-sm'
           }`}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
+          <LayoutGrid className="w-4 h-4" />
           All Products
-        </button>
+        </motion.button>
         {categories.map(category => (
-          <button
+          <motion.button
             key={category.id}
             onClick={() => onSelectCategory(category.id)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
               selectedCategory === category.id
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30'
+                : 'bg-white text-gray-700 hover:bg-gray-100 shadow-sm'
             }`}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
             {category.name}
-          </button>
+          </motion.button>
         ))}
       </div>
-    </div>
+    </motion.div>
   )
 }
